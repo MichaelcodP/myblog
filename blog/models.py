@@ -1,11 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class BlogPost(models.Model):
     title = models.CharField(max_length=100)  # до 100 символів
     body = models.CharField(max_length=255)   # до 255 символів
     author = models.ForeignKey(
-        User, 
+        User,
         on_delete=models.CASCADE  # якщо користувач видаляється, видаляються його пости
     )
 
