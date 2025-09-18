@@ -9,7 +9,6 @@ import factory
 from factory.django import DjangoModelFactory
 from factory import Faker, SubFactory
 
-# Create your tests here.
 # -------------- Factories -----------------
 class UserFactory(DjangoModelFactory):
     class Meta:
@@ -46,3 +45,43 @@ class TestBlogPostModel:
         # Validation via full_clean() raises ValidationError for empty author
         with pytest.raises(ValidationError):
             post.full_clean()
+    
+    def test_title_max_length(self):
+        """Title cannot be longer than 100 characters"""
+        user = UserFactory()
+        too_long_title = "a" * 101 # Assuming max_length is 100
+        post = BlogPost(title=too_long_title, body='Valid body', author=user)
+        # Validation via full_clean() raises ValidationError for title exceeding max_length
+        with pytest.raises(ValidationError):
+            post.full_clean()
+    
+    def test_body_max_length(self):
+        """Body cannot be longer than 255 characters"""
+        user = UserFactory()
+        too_long_body = "a" * 256 # Assuming max_length is 255
+        post = BlogPost(title='Valid title', body=too_long_body, author=user)
+        # Validation via full_clean() raises ValidationError for body exceeding max_length
+        with pytest.raises(ValidationError):
+            post.full_clean()
+    
+    def test_cascade_delete_author(self):
+        """Posts are deleted along with the author"""
+        user = UserFactory()
+        BlogPostFactory(author=user)
+        assert BlogPost.objects.filter(author=user).count() == 1
+        user_id = user.id
+        user.delete()
+        assert BlogPost.objects.filter(author=user_id).count() == 0
+    
+    def test_create_valid_happy_path(self):
+        """Successful creation of post"""
+        user = UserFactory()
+        post = BlogPost.objects.create(
+            title = 'A valid title',
+            body = 'A valid body',
+            author = user
+        )
+        assert BlogPost.objects.count() == 1
+        assert post.title == 'A valid title'
+        assert post.body == 'A valid body'
+        assert post.author == user
