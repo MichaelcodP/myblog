@@ -15,10 +15,30 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='BlogPost', fields=[
-                ('id', models.BigAutoField(
-                    auto_created=True, primary_key=True, serialize=False, verbose_name='ID')), ('title', models.CharField(
-                        max_length=100)), ('body', models.CharField(
-                            max_length=255)), ('author', models.ForeignKey(
-                                on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)), ], options={
-                'verbose_name': 'Blog Post', 'verbose_name_plural': 'Blog Posts', }, ), ]
+            name="BlogPost",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=100)),
+                ("body", models.CharField(max_length=255)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Blog Post",
+                "verbose_name_plural": "Blog Posts",
+            },
+        ),
+    ]
