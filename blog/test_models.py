@@ -85,3 +85,4 @@ class TestBlogPostModel:
         assert post.title == 'A valid title'
         assert post.body == 'A valid body'
         assert post.author == user
+        
