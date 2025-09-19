@@ -15,6 +15,6 @@ pyflakes==3.4.0
 Pygments==2.19.2
 pytest==8.4.2
 pytest-django==4.11.1
-decouple==0.0.7
 sqlparse==0.5.3
 tzdata==2025.2
+python-dotenv==1.0.0
