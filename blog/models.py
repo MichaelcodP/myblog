@@ -4,10 +4,9 @@ from django.contrib.auth.models import User
 
 class BlogPost(models.Model):
     title = models.CharField(max_length=100)  # up to 100 characters
-    body = models.CharField(max_length=255)   # up to 255 characters
+    body = models.CharField(max_length=255)  # up to 255 characters
     author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE  # if a user is deleted, their posts are deleted
+        User, on_delete=models.CASCADE  # if a user is deleted, their posts are deleted
     )
 
     def __str__(self):
