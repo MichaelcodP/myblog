@@ -1,4 +1,3 @@
-from tokenize import TokenError
 from django.contrib.auth.models import User
 from rest_framework import generics, status
 from rest_framework.views import APIView
@@ -7,6 +6,7 @@ from .serializers import RegisterSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenBlacklistView
+from rest_framework_simplejwt.exceptions import TokenError
 
 
 # ---------- Register ----------
