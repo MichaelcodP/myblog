@@ -7,16 +7,20 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenBlacklistView
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework.permissions import AllowAny
 
 
 # ---------- Register ----------
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]  # opens registration without authorization
 
 
 # ---------- Login ----------
 class LoginView(APIView):
+    permission_classes = [AllowAny]  # opens login without authorization
+
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")

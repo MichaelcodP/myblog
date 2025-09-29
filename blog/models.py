@@ -8,6 +8,7 @@ class BlogPost(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE  # if a user is deleted, their posts are deleted
     )
+    safe_for_work = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)  # set when created
     updated_at = models.DateTimeField(auto_now=True)  # update on each save
 
