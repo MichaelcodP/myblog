@@ -3,7 +3,12 @@ from blog.models import BlogPost
 
 
 class BlogPostSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(slug_field="username", read_only=True)
+    author = serializers.PrimaryKeyRelatedField(
+        read_only=True
+    )  # for create/edit tests (id)
+    author_username = serializers.CharField(
+        source="author.username", read_only=True
+    )  # for filter/search tests
 
     class Meta:
         model = BlogPost
@@ -12,6 +17,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
             "title",
             "body",
             "author",
+            "author_username",
             "created_at",
             "updated_at",
             "safe_for_work",

@@ -59,7 +59,7 @@ def test_filter_by_author(api_client, blog_posts):
     response = api_client.get("/api/posts/?author=author")
     assert response.status_code == status.HTTP_200_OK
     for post in response.data["results"]:
-        assert post["author"] == "author"
+        assert post["author_username"] == "author"
 
 
 @pytest.mark.django_db
@@ -100,3 +100,69 @@ def test_pagination_structure(api_client, blog_posts):
     response = api_client.get("/api/posts/")
     assert "count" in response.data
     assert "results" in response.data
+
+
+# ---------------------- JWT and permissions ----------------------
+
+
+@pytest.mark.django_db
+def test_create_post_requires_auth(api_client):
+    """Unlogged user cannot create posts"""
+    response = api_client.post("/api/posts/", {"title": "Test", "body": "Content"})
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_user_can_create_post_with_token(api_client, author):
+    """Logged in user can create posts"""
+    api_client.force_authenticate(user=author)
+    response = api_client.post("/api/posts/", {"title": "My Post", "body": "Content"})
+    assert response.status_code == 201
+    assert response.data["author"] == author.id
+    assert BlogPost.objects.filter(title="My Post", author=author).exists()
+
+
+@pytest.mark.django_db
+def test_user_can_edit_own_post(api_client, author, blog_posts):
+    """User can edit own post"""
+    post = blog_posts[0]
+    api_client.force_authenticate(user=author)
+    response = api_client.put(
+        f"/api/posts/{post.id}/", {"title": "Updated", "body": "Changed"}
+    )
+    assert response.status_code == 200
+    post.refresh_from_db()
+    assert post.title == "Updated"
+
+
+@pytest.mark.django_db
+def test_user_cannot_edit_other_post(api_client, author, another_author, blog_posts):
+    """User cannot edit another user's posts"""
+    post = blog_posts[0]
+    api_client.force_authenticate(user=another_author)
+    response = api_client.put(
+        f"/api/posts/{post.id}/", {"title": "Hack", "body": "Bad"}
+    )
+    assert response.status_code == 403
+    post.refresh_from_db()
+    assert post.title != "Hack"
+
+
+@pytest.mark.django_db
+def test_user_cannot_delete_other_post(api_client, author, another_author, blog_posts):
+    """User cannot delete another user's posts"""
+    post = blog_posts[0]
+    api_client.force_authenticate(user=another_author)
+    response = api_client.delete(f"/api/posts/{post.id}/")
+    assert response.status_code == 403
+    assert BlogPost.objects.filter(id=post.id).exists()
+
+
+@pytest.mark.django_db
+def test_user_can_delete_own_post(api_client, author, blog_posts):
+    """User can delete own post"""
+    post = blog_posts[0]
+    api_client.force_authenticate(user=author)
+    response = api_client.delete(f"/api/posts/{post.id}/")
+    assert response.status_code == 204
+    assert not BlogPost.objects.filter(id=post.id).exists()
