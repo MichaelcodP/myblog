@@ -1,13 +1,14 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets
 from blog.models import BlogPost
 from .filters import BlogPostFilter
 from .serializers import BlogPostSerializer
+from .permissions import IsAuthorOrReadOnly
 
 
 class BlogPostViewSet(viewsets.ModelViewSet):
     queryset = BlogPost.objects.all().order_by("-created_at")
     serializer_class = BlogPostSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthorOrReadOnly]
     filterset_class = BlogPostFilter  # Filter
     search_fields = ["title", "body", "author__username"]  # Search
     ordering_fields = [
