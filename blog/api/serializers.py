@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from blog.models import BlogPost
+from blog.models import BlogPost, Comment
 
 
 class BlogPostSerializer(serializers.ModelSerializer):
@@ -32,3 +32,24 @@ class BlogPostSerializer(serializers.ModelSerializer):
             "tagged_count",
             "last_tag_date",
         ]
+
+
+class CommentPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["id", "body", "blogpost", "author", "created_at"]
+        read_only_fields = ["author", "created_at"]
+
+
+class BlogPostGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogPost
+        fields = ["id", "title"]
+
+
+class CommentGetSerializer(serializers.ModelSerializer):
+    blogpost = BlogPostGetSerializer(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ["id", "body", "blogpost", "author", "created_at"]

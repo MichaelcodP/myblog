@@ -1,9 +1,10 @@
 from rest_framework import viewsets
-from blog.models import BlogPost
-from .filters import BlogPostFilter
-from .serializers import BlogPostSerializer
-from .permissions import IsAuthorOrReadOnly
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.throttling import UserRateThrottle
+from blog.models import BlogPost, Comment
+from .filters import BlogPostFilter
+from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSerializer
+from .permissions import IsAuthorOrReadOnly
 
 
 class BlogPostViewSet(viewsets.ModelViewSet):
@@ -23,4 +24,18 @@ class BlogPostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # automatically set the author
+        serializer.save(author=self.request.user)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all().order_by("-created_at")
+    throttle_scope = [UserRateThrottle]  # basic spam protection
+
+    def get_serializer_class(self):
+        if self.request.method in ["POST", "PUT", "PATCH"]:
+            return CommentPostSerializer
+        return CommentGetSerializer
+
+    def perform_create(self, serializer):
+        # automatically set the comment author
         serializer.save(author=self.request.user)
