@@ -4,7 +4,6 @@ from .filters import BlogPostFilter
 from .serializers import BlogPostSerializer
 from .permissions import IsAuthorOrReadOnly
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.exceptions import PermissionDenied
 
 
 class BlogPostViewSet(viewsets.ModelViewSet):
@@ -23,7 +22,5 @@ class BlogPostViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]  # Default ordering
 
     def perform_create(self, serializer):
-        if not self.request.user or not self.request.user.is_authenticated:
-            raise PermissionDenied("Authentication required")
         # automatically set the author
         serializer.save(author=self.request.user)

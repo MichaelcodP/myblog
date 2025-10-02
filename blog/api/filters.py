@@ -3,7 +3,7 @@ from blog.models import BlogPost
 
 
 class BlogPostFilter(django_filters.FilterSet):
-    created_at = django_filters.IsoDateTimeFilter(
+    created_at_after = django_filters.IsoDateTimeFilter(
         field_name="created_at", lookup_expr="gte"
     )
     created_at_before = django_filters.IsoDateTimeFilter(
