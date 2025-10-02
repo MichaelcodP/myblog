@@ -27,3 +27,24 @@ class BlogPost(models.Model):
         verbose_name = "Blog Post"
         verbose_name_plural = "Blog Posts"
         ordering = ["-created_at"]
+
+
+class Comment(models.Model):
+    body = models.CharField(max_length=255)
+    blogpost = models.ForeignKey(
+        BlogPost,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    author = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="comments",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # for the admin panel, so that it is conveniently displayed
+    def __str__(self):
+        return f"Comment by {self.author or 'Anonymous'} on {self.blogpost.title}"
