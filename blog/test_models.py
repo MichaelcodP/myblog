@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth.models import User
-from blog.models import BlogPost
+from blog.models import BlogPost, Comment
+from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from factory.django import DjangoModelFactory
@@ -109,3 +110,46 @@ def test_blogpost_can_have_image(author):
         img=image,
     )
     assert post.img.name.startswith("uploads/images/")
+
+
+class TestCommentModel:
+    @pytest.mark.django_db
+    def test_comment_can_be_created(self, author):
+        post = BlogPost.objects.create(
+            title="Post 1",
+            body="Body",
+            author=author,
+        )
+        comment = Comment.objects.create(
+            body="Nice post!",
+            blogpost=post,
+            author=author,
+        )
+        assert comment.id is not None
+        assert comment.body == "Nice post!"
+        assert comment.blogpost == post
+        assert comment.author == author
+
+    @pytest.mark.django_db
+    def test_comment_requires_blogpost(self, author):
+        with pytest.raises(IntegrityError):
+            Comment.objects.create(
+                body="Orphan comment",
+                blogpost=None,
+                author=author,
+            )
+
+    @pytest.mark.django_db
+    def test_comment_body_max_length(self, author):
+        post = BlogPost.objects.create(
+            title="Post 2",
+            body="Body",
+            author=author,
+        )
+        comment = Comment(
+            body="x" * 300,
+            blogpost=post,
+            author=author,
+        )
+        with pytest.raises(ValidationError):
+            comment.full_clean()
