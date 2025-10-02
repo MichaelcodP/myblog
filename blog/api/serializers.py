@@ -21,5 +21,14 @@ class BlogPostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "safe_for_work",
+            "img",
+            # "tagged_count",
+            # "last_tag_date",
         ]
-        read_only_fields = ["author", "created_at", "updated_at"]
+        read_only_fields = [
+            "author",
+            "created_at",
+            "updated_at",
+            "tagged_count",
+            "last_tag_date",
+        ]

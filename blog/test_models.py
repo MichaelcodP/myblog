@@ -2,8 +2,17 @@ import pytest
 from django.contrib.auth.models import User
 from blog.models import BlogPost
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from factory.django import DjangoModelFactory
 from factory import Faker, SubFactory
+
+# -------------- Fixtures -----------------
+
+
+@pytest.fixture
+def author(db):
+    return User.objects.create_user(username="testuser", password="password")
+
 
 # -------------- Factories -----------------
 
@@ -86,3 +95,17 @@ class TestBlogPostModel:
         assert post.title == "A valid title"
         assert post.body == "A valid body"
         assert post.author == user
+
+
+@pytest.mark.django_db
+# testing image field
+def test_blogpost_can_have_image(author):
+    image = SimpleUploadedFile("test.jpg", b"file_content", content_type="image/jpeg")
+    post = BlogPost.objects.create(
+        title="Post with image",
+        body="Body of the post",
+        author=author,
+        safe_for_work=True,
+        img=image,
+    )
+    assert post.img.name.startswith("uploads/images/")

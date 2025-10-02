@@ -13,6 +13,13 @@ class BlogPost(models.Model):
 
     safe_for_work = models.BooleanField(default=True)
 
+    # new field for image
+    img = models.ImageField(
+        upload_to="uploads/images/%Y/%m/%d/",
+        blank=True,
+        null=True,
+    )
+
     def __str__(self):
         return self.title  # show the post name as display name
 
