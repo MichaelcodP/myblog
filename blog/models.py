@@ -27,11 +27,11 @@ class BlogPost(models.Model):
 
     @property
     def tagged_count(self):
-        return self.user_tags.count()
+        return self.usertags.count()
 
     @property
-    def last_tag_delete(self):
-        last_tag = self.user_tags.order_by("-created_at").first()
+    def last_tag_date(self):
+        last_tag = self.usertags.order_by("-created_at").first()
         return last_tag.created_at if last_tag else None
 
     def __str__(self):

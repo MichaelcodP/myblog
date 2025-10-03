@@ -166,26 +166,22 @@ class TestUserTagModel:
         with pytest.raises(Exception):
             UserTag.objects.create(blogpost=post, user=user)
 
-        def test_tagged_count_property(self):
-            user1 = User.objects.create_user(username="u1", password="password")
-            user2 = User.objects.create_user(username="u2", password="password")
-            post = BlogPost.objects.create(
-                title="Tagged Post", body="Body", author=user1
-            )
+    def test_tagged_count_property(self):
+        user1 = User.objects.create_user(username="u1", password="password")
+        user2 = User.objects.create_user(username="u2", password="password")
+        post = BlogPost.objects.create(title="Tagged Post", body="Body", author=user1)
 
-            UserTag.objects.create(blogpost=post, user=user1)
-            UserTag.objects.create(blogpost=post, user=user2)
+        UserTag.objects.create(blogpost=post, user=user1)
+        UserTag.objects.create(blogpost=post, user=user2)
 
-            assert post.tagged_count == 2
+        assert post.tagged_count == 2
 
-        def test_last_tag_date_property(self):
-            user1 = User.objects.create_user(username="u1", password="password")
-            user2 = User.objects.create_user(username="u2", password="password")
-            post = BlogPost.objects.create(
-                title="Tagged Post", body="Body", author=user1
-            )
+    def test_last_tag_date_property(self):
+        user1 = User.objects.create_user(username="u1", password="password")
+        user2 = User.objects.create_user(username="u2", password="password")
+        post = BlogPost.objects.create(title="Tagged Post", body="Body", author=user1)
 
-            UserTag.objects.create(blogpost=post, user=user1)
-            later_tag = UserTag.objects.create(blogpost=post, user=user2)
+        UserTag.objects.create(blogpost=post, user=user1)
+        later_tag = UserTag.objects.create(blogpost=post, user=user2)
 
-            assert post.last_tag_date == later_tag.created_at
+        assert post.last_tag_date == later_tag.created_at
