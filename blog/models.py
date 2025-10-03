@@ -20,6 +20,20 @@ class BlogPost(models.Model):
         null=True,
     )
 
+    # many-to-many via UserTag
+    tagged_users = models.ManyToManyField(
+        User, through="UserTag", related_name="tagged_posts"
+    )
+
+    @property
+    def tagged_count(self):
+        return self.user_tags.count()
+
+    @property
+    def last_tag_delete(self):
+        last_tag = self.user_tags.order_by("-created_at").first()
+        return last_tag.created_at if last_tag else None
+
     def __str__(self):
         return self.title  # show the post name as display name
 
@@ -48,3 +62,19 @@ class Comment(models.Model):
     # for the admin panel, so that it is conveniently displayed
     def __str__(self):
         return f"Comment by {self.author or 'Anonymous'} on {self.blogpost.title}"
+
+
+class UserTag(models.Model):
+    blogpost = models.ForeignKey(
+        BlogPost, on_delete=models.CASCADE, related_name="usertags"
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="usertags")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["blogpost", "user"], name="inuque_user_tag")
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} tagged on {self.blogpost.title}"

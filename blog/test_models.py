@@ -1,6 +1,6 @@
 import pytest
 from django.contrib.auth.models import User
-from blog.models import BlogPost, Comment
+from blog.models import BlogPost, Comment, UserTag
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -153,3 +153,39 @@ class TestCommentModel:
         )
         with pytest.raises(ValidationError):
             comment.full_clean()
+
+
+@pytest.mark.django_db
+class TestUserTagModel:
+    def test_user_can_be_tagged_once_per_post(self):
+        user = User.objects.create_user(username="tagger", password="password")
+        post = BlogPost.objects.create(title="Tagged Post", body="Body", author=user)
+
+        UserTag.objects.create(blogpost=post, user=user)
+
+        with pytest.raises(Exception):
+            UserTag.objects.create(blogpost=post, user=user)
+
+        def test_tagged_count_property(self):
+            user1 = User.objects.create_user(username="u1", password="password")
+            user2 = User.objects.create_user(username="u2", password="password")
+            post = BlogPost.objects.create(
+                title="Tagged Post", body="Body", author=user1
+            )
+
+            UserTag.objects.create(blogpost=post, user=user1)
+            UserTag.objects.create(blogpost=post, user=user2)
+
+            assert post.tagged_count == 2
+
+        def test_last_tag_date_property(self):
+            user1 = User.objects.create_user(username="u1", password="password")
+            user2 = User.objects.create_user(username="u2", password="password")
+            post = BlogPost.objects.create(
+                title="Tagged Post", body="Body", author=user1
+            )
+
+            UserTag.objects.create(blogpost=post, user=user1)
+            later_tag = UserTag.objects.create(blogpost=post, user=user2)
+
+            assert post.last_tag_date == later_tag.created_at
