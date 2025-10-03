@@ -11,6 +11,8 @@ class BlogPost(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # set when created
     updated_at = models.DateTimeField(auto_now=True)  # update on each save
 
+    safe_for_work = models.BooleanField(default=True)
+
     def __str__(self):
         return self.title  # show the post name as display name
 
