@@ -132,7 +132,7 @@ class TestCommentModel:
 
     @pytest.mark.django_db
     def test_comment_requires_blogpost(self, author):
-        with pytest.raises(IntegrityError):
+        with pytest.raises(ValidationError):
             Comment.objects.create(
                 body="Orphan comment",
                 blogpost=None,
@@ -152,7 +152,7 @@ class TestCommentModel:
             author=author,
         )
         with pytest.raises(ValidationError):
-            comment.full_clean()
+            comment.save()
 
 
 @pytest.mark.django_db
@@ -163,7 +163,7 @@ class TestUserTagModel:
 
         UserTag.objects.create(blogpost=post, user=user)
 
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             UserTag.objects.create(blogpost=post, user=user)
 
     def test_tagged_count_property(self):

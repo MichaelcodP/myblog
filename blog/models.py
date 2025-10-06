@@ -59,6 +59,10 @@ class Comment(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     # for the admin panel, so that it is conveniently displayed
     def __str__(self):
         return f"Comment by {self.author or 'Anonymous'} on {self.blogpost.title}"
@@ -73,7 +77,7 @@ class UserTag(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["blogpost", "user"], name="inuque_user_tag")
+            models.UniqueConstraint(fields=["blogpost", "user"], name="unique_user_tag")
         ]
 
     def __str__(self):
