@@ -1,9 +1,14 @@
 import pytest
 from django.contrib.auth.models import User
-from blog.models import BlogPost
+from blog.models import BlogPost, Comment
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework.throttling import UserRateThrottle
+from rest_framework.settings import api_settings
+from django.core.cache import cache
 from freezegun import freeze_time
+
+# -------------- Fixtures -----------------
 
 
 @pytest.fixture
@@ -44,6 +49,42 @@ def blog_posts(author, another_author):
         ),
     ]
     return posts
+
+
+@pytest.fixture
+def user(db):
+    return User.objects.create_user(username="testuser", password="password")
+
+
+@pytest.fixture
+def client(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    return client
+
+
+@pytest.fixture
+def blogpost(user):
+    return BlogPost.objects.create(
+        title="Test Post",
+        body="This is a test post",
+        author=user,
+        safe_for_work=True,
+    )
+
+
+@pytest.fixture(autouse=True)
+def clean_comments(db):
+    Comment.objects.all().delete()
+
+
+# Disable throttle during tests
+@pytest.fixture(autouse=True)
+def disable_throttle(monkeypatch):
+    monkeypatch.setattr(api_settings, "DEFAULT_THROTTLE_CLASSES", [])
+
+
+# -------------- Tests -----------------
 
 
 @pytest.mark.django_db
@@ -166,3 +207,71 @@ def test_user_can_delete_own_post(api_client, author, blog_posts):
     response = api_client.delete(f"/api/posts/{post.id}/")
     assert response.status_code == 204
     assert not BlogPost.objects.filter(id=post.id).exists()
+
+
+# ---------------------- Comment API ----------------------
+
+
+@pytest.mark.django_db
+def test_get_comments(client, blogpost, user):
+    Comment.objects.create(body="First comment", blogpost=blogpost, author=user)
+    Comment.objects.create(body="Second comment", blogpost=blogpost, author=user)
+
+    response = client.get("/api/comments/")
+    assert response.status_code == 200
+
+    data = response.json()
+    comments = data.get("results", [])
+    # filter only comments on blog post
+    comments_for_post = [c for c in comments if c["blogpost"]["id"] == blogpost.id]
+    assert len(comments_for_post) == 2
+
+
+@pytest.mark.django_db
+def test_post_comment(client, blogpost):
+    data = {"body": "New comment", "blogpost": blogpost.id}
+    response = client.post("/api/comments/", data)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["body"] == "New comment"
+
+
+@pytest.mark.django_db
+def test_comment_body_too_long(client, blogpost):
+    data = {"body": "x" * 300, "blogpost": blogpost.id}
+    response = client.post("/api/comments/", data)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "body" in response.json()
+
+
+@pytest.mark.django_db
+def test_comment_requires_blogpost(client):
+    data = {"body": "Orphan comment"}
+    response = client.post("/api/comments/", data)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "blogpost" in response.json()
+
+
+# ---------------------- Throttle Test ----------------------
+
+
+class CommentTestThrottle(UserRateThrottle):
+    rate = "2/min"  # small limit for testing
+
+
+@pytest.mark.django_db
+def test_comment_throttling(client, blogpost, monkeypatch):
+    cache.clear()
+
+    # temporarily replace throttle in ViewSet
+    from blog.api.views import CommentViewSet
+
+    monkeypatch.setattr(CommentViewSet, "throttle_classes", [CommentTestThrottle])
+
+    data = {"body": "Spam comment", "blogpost": blogpost.id}
+
+    for i in range(2):
+        response = client.post("/api/comments/", data)
+        assert response.status_code == status.HTTP_201_CREATED
+    # The 11th request should be blocked
+    response = client.post("/api/comments/", data)
+    assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS

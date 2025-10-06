@@ -1,9 +1,19 @@
 import pytest
 from django.contrib.auth.models import User
-from blog.models import BlogPost
+from blog.models import BlogPost, Comment, UserTag
+from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from factory.django import DjangoModelFactory
 from factory import Faker, SubFactory
+
+# -------------- Fixtures -----------------
+
+
+@pytest.fixture
+def author(db):
+    return User.objects.create_user(username="testuser", password="password")
+
 
 # -------------- Factories -----------------
 
@@ -86,3 +96,92 @@ class TestBlogPostModel:
         assert post.title == "A valid title"
         assert post.body == "A valid body"
         assert post.author == user
+
+
+@pytest.mark.django_db
+# testing image field
+def test_blogpost_can_have_image(author):
+    image = SimpleUploadedFile("test.jpg", b"file_content", content_type="image/jpeg")
+    post = BlogPost.objects.create(
+        title="Post with image",
+        body="Body of the post",
+        author=author,
+        safe_for_work=True,
+        img=image,
+    )
+    assert post.img.name.startswith("uploads/images/")
+
+
+class TestCommentModel:
+    @pytest.mark.django_db
+    def test_comment_can_be_created(self, author):
+        post = BlogPost.objects.create(
+            title="Post 1",
+            body="Body",
+            author=author,
+        )
+        comment = Comment.objects.create(
+            body="Nice post!",
+            blogpost=post,
+            author=author,
+        )
+        assert comment.id is not None
+        assert comment.body == "Nice post!"
+        assert comment.blogpost == post
+        assert comment.author == author
+
+    @pytest.mark.django_db
+    def test_comment_requires_blogpost(self, author):
+        with pytest.raises(ValidationError):
+            Comment.objects.create(
+                body="Orphan comment",
+                blogpost=None,
+                author=author,
+            )
+
+    @pytest.mark.django_db
+    def test_comment_body_max_length(self, author):
+        post = BlogPost.objects.create(
+            title="Post 2",
+            body="Body",
+            author=author,
+        )
+        comment = Comment(
+            body="x" * 300,
+            blogpost=post,
+            author=author,
+        )
+        with pytest.raises(ValidationError):
+            comment.save()
+
+
+@pytest.mark.django_db
+class TestUserTagModel:
+    def test_user_can_be_tagged_once_per_post(self):
+        user = User.objects.create_user(username="tagger", password="password")
+        post = BlogPost.objects.create(title="Tagged Post", body="Body", author=user)
+
+        UserTag.objects.create(blogpost=post, user=user)
+
+        with pytest.raises(IntegrityError):
+            UserTag.objects.create(blogpost=post, user=user)
+
+    def test_tagged_count_property(self):
+        user1 = User.objects.create_user(username="u1", password="password")
+        user2 = User.objects.create_user(username="u2", password="password")
+        post = BlogPost.objects.create(title="Tagged Post", body="Body", author=user1)
+
+        UserTag.objects.create(blogpost=post, user=user1)
+        UserTag.objects.create(blogpost=post, user=user2)
+
+        assert post.tagged_count == 2
+
+    def test_last_tag_date_property(self):
+        user1 = User.objects.create_user(username="u1", password="password")
+        user2 = User.objects.create_user(username="u2", password="password")
+        post = BlogPost.objects.create(title="Tagged Post", body="Body", author=user1)
+
+        UserTag.objects.create(blogpost=post, user=user1)
+        later_tag = UserTag.objects.create(blogpost=post, user=user2)
+
+        assert post.last_tag_date == later_tag.created_at
