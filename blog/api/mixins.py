@@ -1,11 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from blog.models import Like
 
 
 class LikeModelMixin:
-    @action(detail=True, method=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def like(self, request, pk=None):
         obj = self.get_object()
         user = request.user
@@ -20,7 +21,7 @@ class LikeModelMixin:
             return Response({"status": "liked"})
         return Response({"status": "already liked"})
 
-    @action(detail=True, method=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def unlike(self, request, pk=None):
         obj = self.get_object()
         user = request.user
