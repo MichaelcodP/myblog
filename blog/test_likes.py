@@ -68,3 +68,18 @@ class TestLikesSystem:
         assert res.status_code == 200
         assert res.data["status"] == "liked"
         assert Like.objects.filter(user=user, object_id=comment.id).exists()
+
+    def test_unauthenticated_user_cannot_like_post(self, blogpost):
+        client = APIClient()  # without authorization
+        url = reverse("post-like", args=[blogpost.id])
+        response = client.post(url)
+        assert response.status_code == 401
+        assert (
+            response.data["detail"] == "Authentication credentials were not provided."
+        )
+
+    def test_unauthenticated_user_cannot_unlike_post(self, blogpost):
+        client = APIClient()
+        url = reverse("post-like", args=[blogpost.id])
+        response = client.post(url)
+        assert response.status_code == 401

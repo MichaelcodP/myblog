@@ -61,7 +61,7 @@ class Comment(models.Model):
         related_name="comments",
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    likes = GenericRelation("Like", related_query_name="liked_posts")
+    likes = GenericRelation("Like", related_query_name="liked_comments")
 
     def save(self, *args, **kwargs):
         self.full_clean()
