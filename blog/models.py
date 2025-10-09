@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 
 
 class BlogPost(models.Model):
@@ -12,6 +14,7 @@ class BlogPost(models.Model):
     updated_at = models.DateTimeField(auto_now=True)  # update on each save
 
     safe_for_work = models.BooleanField(default=True)
+    likes = GenericRelation("Like", related_query_name="liked_posts")
 
     # new field for image
     img = models.ImageField(
@@ -58,6 +61,7 @@ class Comment(models.Model):
         related_name="comments",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    likes = GenericRelation("Like", related_query_name="liked_comments")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -82,3 +86,23 @@ class UserTag(models.Model):
 
     def __str__(self):
         return f"{self.user.username} tagged on {self.blogpost.title}"
+
+
+class Like(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Generic relation
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "content_type", "object_id"], name="unique_user_like"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} liked {self.content_object}"
