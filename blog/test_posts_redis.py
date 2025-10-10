@@ -16,6 +16,9 @@ def blogpost(user):
     return BlogPost.objects.create(title="Test Post", body="Body", author=user)
 
 
+# -------------- Tests -----------------
+
+
 @pytest.mark.django_db
 class TestRedisVisits:
     @patch("blog.utils.redis.Redis")
