@@ -58,9 +58,12 @@ class BlogPostSerializer(serializers.ModelSerializer):
         return last_tag.created_at if last_tag else None
 
     def get_visits_count(self, obj):
-        redis_client = get_redis_connection()
-        count = redis_client.get(f"post:{obj.pk}:visits")
-        return int(count) if count else 0
+        try:
+            redis_client = get_redis_connection()
+            count = redis_client.get(f"post:{obj.pk}:visits")
+            return int(count) if count else 0
+        except Exception:
+            return 0
 
 
 class CommentPostSerializer(serializers.ModelSerializer):
