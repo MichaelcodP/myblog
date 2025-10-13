@@ -1,5 +1,9 @@
+import logging
 from rest_framework import serializers
 from blog.models import BlogPost, Comment, UserTag
+from blog.utils import get_redis_connection
+
+logger = logging.getLogger(__name__)
 
 
 class UserTagSerializer(serializers.ModelSerializer):
@@ -22,6 +26,8 @@ class BlogPostSerializer(serializers.ModelSerializer):
     tagged_count = serializers.SerializerMethodField()
     last_tag_date = serializers.SerializerMethodField()
 
+    visits_count = serializers.SerializerMethodField()
+
     class Meta:
         model = BlogPost
         fields = [
@@ -37,6 +43,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
             "tagged_users",
             "tagged_count",
             "last_tag_date",
+            "visits_count",
         ]
         read_only_fields = [
             "author",
@@ -52,6 +59,17 @@ class BlogPostSerializer(serializers.ModelSerializer):
     def get_last_tag_date(self, obj):
         last_tag = obj.usertags.order_by("-created_at").first()
         return last_tag.created_at if last_tag else None
+
+    def get_visits_count(self, obj):
+        try:
+            redis_client = get_redis_connection()
+            count = redis_client.get(f"post:{obj.pk}:visits")
+            return int(count) if count else 0
+        except Exception as e:
+            logger.error(
+                f"Redis connection failed in get_visits_count for post {obj.pk}: {e}"
+            )
+            return 0
 
 
 class CommentPostSerializer(serializers.ModelSerializer):
