@@ -1,5 +1,8 @@
+import logging
 from django.utils.deprecation import MiddlewareMixin
 from blog.utils import get_redis_connection
+
+logger = logging.getLogger(__name__)
 
 
 class RedisVisitMiddleware(MiddlewareMixin):
@@ -7,7 +10,11 @@ class RedisVisitMiddleware(MiddlewareMixin):
         self.get_response = get_response
         try:
             self.redis = get_redis_connection()
-        except Exception:
+        except Exception as e:
+            # Log connection failure but keep middleware functional
+            logger.error(
+                f"Failed to connect to Redis in middleware initialization: {e}"
+            )
             self.redis = (
                 None  # Redis may be unavailable, but the server should not go down
             )
@@ -25,7 +32,7 @@ class RedisVisitMiddleware(MiddlewareMixin):
             if pk and self.redis:
                 try:
                     self.redis.incr(f"post:{pk}:visits")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(f"Redis increment failed for post {pk}: {e}")
 
         return response

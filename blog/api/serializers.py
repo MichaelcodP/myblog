@@ -1,6 +1,9 @@
+import logging
 from rest_framework import serializers
 from blog.models import BlogPost, Comment, UserTag
 from blog.utils import get_redis_connection
+
+logger = logging.getLogger(__name__)
 
 
 class UserTagSerializer(serializers.ModelSerializer):
@@ -62,7 +65,10 @@ class BlogPostSerializer(serializers.ModelSerializer):
             redis_client = get_redis_connection()
             count = redis_client.get(f"post:{obj.pk}:visits")
             return int(count) if count else 0
-        except Exception:
+        except Exception as e:
+            logger.error(
+                f"Redis connection failed in get_visits_count for post {obj.pk}: {e}"
+            )
             return 0
 
 
