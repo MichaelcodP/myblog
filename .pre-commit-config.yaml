@@ -18,6 +18,6 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest
+        entry: docker compose run --rm web pytest
         language: system
         pass_filenames: false
