@@ -7,3 +7,5 @@ db.sqlite3
 *.log
 .env
 *.jpg
+staticfiles/
+.env.local
