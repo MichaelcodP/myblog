@@ -6,7 +6,7 @@ repos:
         entry: flake8
         language: system
         types: [python]
-        args: ["--max-line-length=120", "--exclude=blog/migrations/*"] 
+        args: ["--max-line-length=120", "--exclude=blog/migrations/*"]
 
   - repo: https://github.com/psf/black
     rev: 25.9.0
@@ -18,6 +18,6 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: docker compose run --rm web pytest
+        entry: pytest
         language: system
         pass_filenames: false
