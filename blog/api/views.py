@@ -6,6 +6,8 @@ from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSe
 from .permissions import IsAuthorOrReadOnly
 from blog.api.mixins import LikeModelMixin
 
+from blog.tasks import send_post_published_email
+
 
 class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     queryset = BlogPost.objects.all().order_by("-created_at")
@@ -23,8 +25,11 @@ class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     ordering = ["-created_at"]  # Default ordering
 
     def perform_create(self, serializer):
-        # automatically set the author
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        try:
+            send_post_published_email.delay(post.id)
+        except Exception as e:
+            print(f"Celery task failed: {e}")
 
 
 class CommentViewSet(LikeModelMixin, viewsets.ModelViewSet):
