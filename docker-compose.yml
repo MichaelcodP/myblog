@@ -19,7 +19,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
+  worker:
+    build: .
+    command: celery -A myblog worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
   db:
     image: postgres:16
     container_name: myblog_db
