@@ -34,6 +34,8 @@ def send_post_published_email(self, post_id):
 
         logger.info(f"Email sent successfully to {user_email} for post {post_id}")
 
+        return "Sent"
+
     except BlogPost.DoesNotExist:
         logger.error(f"Post {post_id} does not exist")
         return "Post not found"
