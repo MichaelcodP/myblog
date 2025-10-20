@@ -28,6 +28,8 @@ class BlogPost(models.Model):
         User, through="UserTag", related_name="tagged_posts"
     )
 
+    premium = models.BooleanField(default=False)
+
     @property
     def tagged_count(self):
         return self.usertags.count()
