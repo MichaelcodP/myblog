@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, max_retries=3)
 def send_post_published_email(self, post_id):
-    """ "
+    """
     Asynchronous task to send an email notif when a new post is published
     """
     try:

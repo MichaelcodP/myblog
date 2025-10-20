@@ -1,3 +1,4 @@
+import logging
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from blog.models import BlogPost, Comment
@@ -7,6 +8,8 @@ from .permissions import IsAuthorOrReadOnly
 from blog.api.mixins import LikeModelMixin
 
 from blog.tasks import send_post_published_email
+
+logger = logging.getLogger(__name__)
 
 
 class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
@@ -29,7 +32,7 @@ class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
         try:
             send_post_published_email.delay(post.id)
         except Exception as e:
-            print(f"Celery task failed: {e}")
+            logger.exception(f"Celery task failed: {e}")
 
 
 class CommentViewSet(LikeModelMixin, viewsets.ModelViewSet):
