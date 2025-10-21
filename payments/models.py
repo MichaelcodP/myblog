@@ -32,3 +32,10 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment of {self.user} -> {self.post.title}"
+
+    def mark_as_completed(self, intent_id=None):
+        self.status = "completed"
+        self.paid = True
+        if intent_id:
+            self.payment_intent_id = intent_id
+        self.save()

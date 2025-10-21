@@ -40,8 +40,8 @@ def create_checkout_session(request, post_id):
             }
         ],
         mode="payment",
-        success_url=request.build_absolute_url("/payment/success"),
-        cancel_url=request.build_absolute_url("/payment/cansel"),
+        success_url=request.build_absolute_uri("/payment/success"),
+        cancel_url=request.build_absolute_uri("/payment/cancel"),
         metadata={"user_id": request.user.id, "post_id": post.id},
     )
 
