@@ -1,3 +1,5 @@
+from decimal import Decimal
+from django.conf import settings
 import stripe
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
@@ -11,6 +13,9 @@ from payments.models import Payment
 @permission_classes([IsAuthenticated])
 def create_checkout_session(request, post_id):
     post = get_object_or_404(BlogPost, pk=post_id)
+
+    amount = Decimal(settings.STRIPE_PRICE_AMOUNT)
+    currency = settings.STRIPE_CURRENCY
 
     if not post.premium:
         return Response({"error": "This post is not premium."}, status=400)
@@ -27,16 +32,16 @@ def create_checkout_session(request, post_id):
         line_items=[
             {
                 "price_data": {
-                    "currency": "usd",
+                    "currency": currency,
                     "product_data": {"name": post.title},
-                    "unit_amount": 500,  # ($5.00)
+                    "unit_amount": int(amount * 100),  # cent convertion
                 },
                 "quantity": 1,
             }
         ],
         mode="payment",
-        success_url="https://localhost:8000/success",
-        cancel_url="https://localhost:8000/cancel",
+        success_url=request.build_absolute_url("/payment/success"),
+        cancel_url=request.build_absolute_url("/payment/cansel"),
         metadata={"user_id": request.user.id, "post_id": post.id},
     )
 
@@ -44,8 +49,9 @@ def create_checkout_session(request, post_id):
         user=request.user,
         post=post,
         stripe_checkout_id=checkout_session.id,
-        amount=5.00,
-        currency="usd",
+        amount=amount,
+        currency=currency,
+        status="pending",
     )
 
     return Response({"id": checkout_session.id})
