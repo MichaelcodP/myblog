@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from blog.models import BlogPost, Comment
 from .filters import BlogPostFilter
 from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSerializer
-from .permissions import IsAuthorOrReadOnly
+from .permissions import HasPremiumAccessOrAuthor, IsAuthorOrReadOnly
 from blog.api.mixins import LikeModelMixin
 
 from blog.tasks import send_post_published_email
@@ -15,7 +15,11 @@ logger = logging.getLogger(__name__)
 class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     queryset = BlogPost.objects.all().order_by("-created_at")
     serializer_class = BlogPostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+        IsAuthorOrReadOnly,
+        HasPremiumAccessOrAuthor,
+    ]
     filterset_class = BlogPostFilter  # Filter
     search_fields = ["title", "body", "author__username"]  # Search
     ordering_fields = [
