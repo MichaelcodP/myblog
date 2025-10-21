@@ -22,4 +22,5 @@ urlpatterns = [
     path("", include("blog.urls")),
     path("api/", include("users.urls")),  # Register, Login, Logout
     path("api/", include("blog.api.urls")),  # Blogpost API
+    path("api/payments/", include("payments.urls", namespace="payments")),
 ]

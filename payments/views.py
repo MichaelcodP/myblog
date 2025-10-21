@@ -20,12 +20,12 @@ def create_checkout_session(request, post_id):
     if not post.premium:
         return Response({"error": "This post is not premium."}, status=400)
 
-    if post.author == request.user:
-        return Response({"message": "Authors can access their posts for free."})
-
-    # Avoid duplicate payments
+    # If already purchased
     if Payment.objects.filter(user=request.user, post=post, paid=True).exists():
         return Response({"message": "Already purchased."})
+
+    if post.author == request.user:
+        return Response({"message": "Authors can access their posts for free."})
 
     checkout_session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -34,14 +34,14 @@ def create_checkout_session(request, post_id):
                 "price_data": {
                     "currency": currency,
                     "product_data": {"name": post.title},
-                    "unit_amount": int(amount * 100),  # cent convertion
+                    "unit_amount": int(amount * 100),
                 },
                 "quantity": 1,
             }
         ],
         mode="payment",
-        success_url=request.build_absolute_uri("/payment/success"),
-        cancel_url=request.build_absolute_uri("/payment/cancel"),
+        success_url=request.build_absolute_uri("/payment/success/"),
+        cancel_url=request.build_absolute_uri("/payment/cancel/"),
         metadata={"user_id": request.user.id, "post_id": post.id},
     )
 

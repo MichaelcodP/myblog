@@ -4,7 +4,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from blog.models import BlogPost, Comment
 from .filters import BlogPostFilter
 from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSerializer
-from .permissions import HasPremiumAccessOrAuthor, IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly
+from payments.permissions import HasPaidForPostOrIsAuthor
 from blog.api.mixins import LikeModelMixin
 
 from blog.tasks import send_post_published_email
@@ -18,7 +19,7 @@ class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     permission_classes = [
         IsAuthenticatedOrReadOnly,
         IsAuthorOrReadOnly,
-        HasPremiumAccessOrAuthor,
+        HasPaidForPostOrIsAuthor,
     ]
     filterset_class = BlogPostFilter  # Filter
     search_fields = ["title", "body", "author__username"]  # Search

@@ -9,6 +9,30 @@ from payments.models import Payment
 logger = logging.getLogger(__name__)
 
 
+def handle_successful_payment(session):
+    payment = Payment.objects.filter(stripe_checkout_id=session.get("id")).first()
+    if payment:
+        payment.status = "completed"
+        payment.payment_intent_id = session.get("payment_intent")
+        payment.paid = True
+        payment.save()
+        logger.info(
+            f"Payment successful for user {payment.user} and post {payment.post.id}"
+        )
+    else:
+        logger.warning(f"No payment record found for session {session.get("id")}")
+
+
+def handle_failed_payment(session):
+    payment = Payment.objects.filter(stripe_checkout_id=session.get("id")).first()
+    if payment:
+        payment.status = "failed"
+        payment.save()
+        logger.warning(
+            f"Payment failed for user {payment.user} and post {payment.post.id}"
+        )
+
+
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
@@ -20,31 +44,12 @@ def stripe_webhook(request):
             sig_header=sig_header,
             secret=settings.STRIPE_WEBHOOK_SECRET,
         )
-    except (ValueError, stripe.error.SignatureVerificationError) as e:
+    except stripe.SignatureVerificationError as e:
         logger.error(f"Webhook error: {e}")
         return HttpResponse(status=400)
-
-    def handle_successful_payment(session):
-        payment = Payment.objects.filter(stripe_checkout_id=session.get("id")).first()
-        if payment:
-            payment.status = "completed"
-            payment.payment_intent_id = session.get("payment_intent")
-            payment.paid = True
-            payment.save()
-            logger.info(
-                f"Payment successful for user {payment.user} and post {payment.post.id}"
-            )
-        else:
-            logger.warning(f"No payment record found for session {session.get("id")}")
-
-    def handle_failed_payment(session):
-        payment = Payment.objects.filter(stripe_checkout_id=session.get("id")).first()
-        if payment:
-            payment.status = "failed"
-            payment.save()
-            logger.warning(
-                f"Payment failed for user {payment.user} and post {payment.post.id}"
-            )
+    except ValueError as e:
+        logger.error(f"Invalid payload: {e}")
+        return HttpResponse(status=400)
 
     try:
         if event["type"] == "checkout.session.completed":
@@ -54,3 +59,5 @@ def stripe_webhook(request):
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return HttpResponse(status=400)
+
+    return HttpResponse(status=200)
