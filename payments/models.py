@@ -13,7 +13,7 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("user", "post")  # Ensure a user can pay for a post only once
+        unique_together = ("user", "post")  # User can pay for a post only once
 
     def __str__(self):
         return f"Payment of {self.user} -> {self.post.title}"
