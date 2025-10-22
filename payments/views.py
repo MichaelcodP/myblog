@@ -76,7 +76,7 @@ def create_checkout_session(request, post_id):
         ],
         mode="payment",
         success_url=request.build_absolute_uri(reverse("payments:payment_success")),
-        cancel_url=request.build_absolute_uri(reverse("payments:payment_cancel/")),
+        cancel_url=request.build_absolute_uri(reverse("payments:payment_cancel")),
         metadata={"user_id": request.user.id, "post_id": post.id},
     )
 

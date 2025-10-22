@@ -6,6 +6,7 @@ from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSe
 from .permissions import IsAuthorOrReadOnly
 from payments.permissions import HasPaidForPostOrIsAuthor
 from blog.api.mixins import LikeModelMixin
+from rest_framework.exceptions import NotAuthenticated
 
 from blog.tasks import send_post_published_email
 
@@ -31,6 +32,8 @@ class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     ordering = ["-created_at"]  # Default ordering
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            raise NotAuthenticated("Authentication required to create a post")
         post = serializer.save(author=self.request.user)
         try:
             send_post_published_email.delay(post.id)
