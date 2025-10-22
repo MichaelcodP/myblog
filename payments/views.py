@@ -1,12 +1,47 @@
 from decimal import Decimal
 from django.conf import settings
+from django.urls import reverse
 import stripe
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from blog.models import BlogPost
 from payments.models import Payment
+
+
+@api_view(["GET"])
+def payment_success(request):
+    if request.accepted_renderer.format == "html":
+        messages.success(
+            request,
+            "Payment completed successfully! You now have access to the content.",
+        )
+        return redirect("home")
+
+    return Response(
+        {
+            "status": "success",
+            "message": "Payment completed successfully",
+            "next": request.build_absolute_uri("/api/posts/"),
+        }
+    )
+
+
+@api_view(["GET"])
+def payment_cancel(request):
+    if request.accepted_renderer.format == "html":
+        messages.info(request, "Payment was cancelled. You can try again later.")
+        return redirect("home")
+
+    return Response(
+        {
+            "status": "cancelled",
+            "message": "Payment was cancelled by the user",
+            "next": request.build_absolute_uri("/api/posts/"),
+        }
+    )
 
 
 @api_view(["POST"])
@@ -34,14 +69,14 @@ def create_checkout_session(request, post_id):
                 "price_data": {
                     "currency": currency,
                     "product_data": {"name": post.title},
-                    "unit_amount": int(amount * 100),
+                    "unit_amount": int(amount * Decimal("100")),
                 },
                 "quantity": 1,
             }
         ],
         mode="payment",
-        success_url=request.build_absolute_uri("/payment/success/"),
-        cancel_url=request.build_absolute_uri("/payment/cancel/"),
+        success_url=request.build_absolute_uri(reverse("payments:payment_success")),
+        cancel_url=request.build_absolute_uri(reverse("payments:payment_cancel/")),
         metadata={"user_id": request.user.id, "post_id": post.id},
     )
 

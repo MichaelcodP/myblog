@@ -20,7 +20,7 @@ def handle_successful_payment(session):
             f"Payment successful for user {payment.user} and post {payment.post.id}"
         )
     else:
-        logger.warning(f"No payment record found for session {session.get("id")}")
+        logger.warning(f'No payment record found for session {session.get("id")}')
 
 
 def handle_failed_payment(session):

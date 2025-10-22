@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+from decimal import Decimal
 from pathlib import Path
 import os
 import stripe
@@ -215,5 +216,5 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", default="")
-STRIPE_PRICE_AMOUNT = float(os.getenv("STRIPE_PRICE_AMOUNT", "5.00"))
+STRIPE_PRICE_AMOUNT = Decimal(os.getenv("STRIPE_PRICE_AMOUNT", "5.00"))
 STRIPE_CURRENCY = os.getenv("STRIPE_CURRENCY", "usd")

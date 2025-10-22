@@ -1,6 +1,5 @@
 import logging
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from blog.models import BlogPost, Comment
 from .filters import BlogPostFilter
 from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSerializer
@@ -17,7 +16,6 @@ class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     queryset = BlogPost.objects.all().order_by("-created_at")
     serializer_class = BlogPostSerializer
     permission_classes = [
-        IsAuthenticatedOrReadOnly,
         IsAuthorOrReadOnly,
         HasPaidForPostOrIsAuthor,
     ]
