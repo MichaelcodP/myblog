@@ -16,6 +16,16 @@ class UserTagSerializer(serializers.ModelSerializer):
 
 
 class BlogPostSerializer(serializers.ModelSerializer):
+    """
+    Serializer for blog posts.
+
+    Fields:
+    - title: The title of the blog post
+    - body: The main content
+    - author: User who created the post
+    - created_at: DateTime when post was created
+    """
+
     author = serializers.PrimaryKeyRelatedField(
         read_only=True
     )  # for create/edit tests (id)
