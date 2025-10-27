@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth.models import User
+from unittest.mock import patch
 from blog.models import BlogPost, Comment
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -154,13 +155,15 @@ def test_create_post_requires_auth(api_client):
 
 
 @pytest.mark.django_db
-def test_user_can_create_post_with_token(api_client, author):
+@patch("blog.tasks.send_post_published_email.delay")
+def test_user_can_create_post_with_token(mock_email_task, api_client, author):
     """Logged in user can create posts"""
     api_client.force_authenticate(user=author)
     response = api_client.post("/api/posts/", {"title": "My Post", "body": "Content"})
     assert response.status_code == 201
     assert response.data["author"] == author.id
     assert BlogPost.objects.filter(title="My Post", author=author).exists()
+    mock_email_task.assert_called_once()
 
 
 @pytest.mark.django_db

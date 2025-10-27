@@ -1,11 +1,12 @@
 import logging
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from blog.models import BlogPost, Comment
 from .filters import BlogPostFilter
 from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSerializer
 from .permissions import IsAuthorOrReadOnly
+from payments.permissions import HasPaidForPostOrIsAuthor
 from blog.api.mixins import LikeModelMixin
+from rest_framework.exceptions import NotAuthenticated
 
 from blog.tasks import send_post_published_email
 
@@ -15,7 +16,10 @@ logger = logging.getLogger(__name__)
 class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     queryset = BlogPost.objects.all().order_by("-created_at")
     serializer_class = BlogPostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [
+        IsAuthorOrReadOnly,
+        HasPaidForPostOrIsAuthor,
+    ]
     filterset_class = BlogPostFilter  # Filter
     search_fields = ["title", "body", "author__username"]  # Search
     ordering_fields = [
@@ -28,6 +32,8 @@ class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     ordering = ["-created_at"]  # Default ordering
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            raise NotAuthenticated("Authentication required to create a post")
         post = serializer.save(author=self.request.user)
         try:
             send_post_published_email.delay(post.id)
