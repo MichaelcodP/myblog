@@ -32,7 +32,7 @@ else:
 SECRET_KEY = os.getenv("SECRET_KEY", "test-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", default=False)
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes", "on")
 
 ALLOWED_HOSTS = [
     h.strip()
