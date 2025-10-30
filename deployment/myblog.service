@@ -1,0 +1,28 @@
+[Unit]
+Description=MyBlog Django Application
+Documentation=https://github.com/MichaelcodP/myblog
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=exec
+User=myblog
+Group=myblog
+WorkingDirectory=/home/myblog/myblog_project
+Environment=PATH=/home/myblog/myblog_project/venv/bin
+ExecStart=/home/myblog/myblog_project/venv/bin/gunicorn \
+          --workers 3 \
+          --bind unix:/home/myblog/myblog_project/myblog.sock \
+          --access-logfile /home/myblog/logs/access.log \
+          --error-logfile /home/myblog/logs/error.log \
+          --log-level info \
+          myblog.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
