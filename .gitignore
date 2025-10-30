@@ -9,3 +9,5 @@ db.sqlite3
 *.jpg
 staticfiles/
 .env.local
+.env.docker
+.env.production.template

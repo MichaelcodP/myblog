@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     curl \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Робоча директорія
@@ -20,8 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копіюємо весь проект
 COPY . /app/
 
-# Робимо скрипт виконуваним
-RUN chmod +x /app/docker-entrypoint.sh
+# Конвертуємо line endings та робимо скрипт виконуваним
+RUN dos2unix /app/docker-entrypoint.sh && \
+    chmod +x /app/docker-entrypoint.sh
 
 # Порт
 EXPOSE 8000

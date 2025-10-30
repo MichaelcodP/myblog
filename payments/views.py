@@ -10,9 +10,31 @@ from rest_framework.response import Response
 from blog.models import BlogPost
 from payments.models import Payment
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="Handle successful payment callback",
+    operation_summary="Payment Success Handler",
+    responses={
+        200: openapi.Response(
+            description="Success response",
+            examples={
+                "application/json": {
+                    "status": "success",
+                    "message": "Payment completed successfully",
+                    "next": "/api/posts/",
+                }
+            },
+        )
+    },
+    tags=["payments"],
+)
 @api_view(["GET"])
 def payment_success(request):
+    """Handle successful payment callback."""
     if request.accepted_renderer.format == "html":
         messages.success(
             request,
@@ -29,8 +51,27 @@ def payment_success(request):
     )
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_description="Handle cancelled payment callback",
+    operation_summary="Payment Cancel Handler",
+    responses={
+        200: openapi.Response(
+            description="Cancel response",
+            examples={
+                "application/json": {
+                    "status": "cancelled",
+                    "message": "Payment was cancelled by the user",
+                    "next": "/api/posts/",
+                }
+            },
+        )
+    },
+    tags=["payments"],
+)
 @api_view(["GET"])
 def payment_cancel(request):
+    """Handle cancelled payment callback from Stripe."""
     if request.accepted_renderer.format == "html":
         messages.info(request, "Payment was cancelled. You can try again later.")
         return redirect("home")
@@ -44,9 +85,35 @@ def payment_cancel(request):
     )
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_description="Create a Stripe checkout session for premium content",
+    operation_summary="Create Checkout Session",
+    manual_parameters=[
+        openapi.Parameter(
+            "post_id",
+            openapi.IN_PATH,
+            description="ID of the premium post to purchase",
+            type=openapi.TYPE_INTEGER,
+            required=True,
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            description="Checkout session created",
+            examples={"application/json": {"id": "cs_test_..."}},
+        ),
+        400: "Invalid request or post is not premium",
+        401: "Authentication required",
+        404: "Post not found",
+    },
+    security=[{"Bearer": []}],
+    tags=["payments"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_checkout_session(request, post_id):
+    """Create a Stripe checkout session for purchasing premium content."""
     post = get_object_or_404(BlogPost, pk=post_id)
 
     amount = Decimal(settings.STRIPE_PRICE_AMOUNT)

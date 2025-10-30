@@ -14,4 +14,6 @@ app.conf.result_serializer = "json"
 app.conf.accept_content = ["json"]
 app.conf.timezone = "UTC"
 
+app.config_from_object("django.conf:settings", namespace="CELERY")
+
 app.autodiscover_tasks()
