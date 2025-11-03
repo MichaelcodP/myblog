@@ -9,7 +9,7 @@ apt update && apt upgrade -y
 # Install system dependencies
 echo "Installing system dependencies..."
 apt install -y software-properties-common build-essential curl git unzip wget tree htop nano
-apt install -y install -y python3 python3-venv python3-dev python3-pip
+apt install -y python3 python3-venv python3-dev python3-pip
 apt install -y postgresql-client redis-server nginx supervisor fail2ban ufw
 
 # Create application user
