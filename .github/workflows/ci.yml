@@ -48,6 +48,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/myblog
           SECRET_KEY: test-secret-key-for-ci-testing-only
           DEBUG: False
+          TESTING: true 
           ALLOWED_HOSTS: localhost,127.0.0.1
           # Use SQLite for testing - no external DB needed
           DB_ENGINE: django.db.backends.sqlite3

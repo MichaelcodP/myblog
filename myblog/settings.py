@@ -258,7 +258,8 @@ else:
     MEDIA_ROOT = BASE_DIR / "uploads"
 
 # Production security settings
-if not DEBUG:
+TESTING = os.getenv("TESTING", "False").lower() == "true"
+if not DEBUG and not TESTING:
     # HTTPS/SSL Settings
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
