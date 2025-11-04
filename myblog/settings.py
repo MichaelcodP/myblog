@@ -66,6 +66,7 @@ REST_FRAMEWORK = {
     # Authentication
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
     # Authorization
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
@@ -308,3 +309,23 @@ if not DEBUG and not TESTING:
             },
         },
     }
+
+# CSP Settings - Allow Stripe and inline scripts safely
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = [
+    "'self'",
+    "'unsafe-inline'",
+    "https://js.stripe.com",
+    "https://m.stripe.network",
+]
+CSP_CONNECT_SRC = [
+    "'self'",
+    "https://api.stripe.com",
+    "https://m.stripe.network",
+]
+CSP_FRAME_SRC = [
+    "'self'",
+    "https://checkout.stripe.com",
+    "https://js.stripe.com",
+]
+CSP_IMG_SRC = ["'self'", "data:", "https:"]  # Allow images from HTTPS

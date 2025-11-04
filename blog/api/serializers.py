@@ -38,6 +38,10 @@ class BlogPostSerializer(serializers.ModelSerializer):
 
     visits_count = serializers.SerializerMethodField()
 
+    user_has_access = serializers.SerializerMethodField()
+    payment_required = serializers.SerializerMethodField()
+    checkout_url = serializers.SerializerMethodField()
+
     class Meta:
         model = BlogPost
         fields = [
@@ -49,11 +53,15 @@ class BlogPostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "safe_for_work",
+            "premium",
             "img",
             "tagged_users",
             "tagged_count",
             "last_tag_date",
             "visits_count",
+            "user_has_access",
+            "payment_required",
+            "checkout_url",
         ]
         read_only_fields = [
             "author",
@@ -80,6 +88,31 @@ class BlogPostSerializer(serializers.ModelSerializer):
                 f"Redis connection failed in get_visits_count for post {obj.pk}: {e}"
             )
             return 0
+
+    def get_user_has_access(self, obj):
+        """Check if current user has access to this post"""
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return not obj.premium
+
+        if obj.author == request.user or not obj.premium:
+            return True
+
+        from payments.models import Payment
+
+        return Payment.objects.filter(
+            user=request.user, post=obj, status="completed"
+        ).exists()
+
+    def get_payment_required(self, obj):
+        """Check if payment is required"""
+        return obj.premium and not self.get_user_has_access(obj)
+
+    def get_checkout_url(self, obj):
+        """Get payment URL if needed"""
+        if self.get_payment_required(obj):
+            return f"/api/payments/create-checkout-session/{obj.id}/"
+        return None
 
 
 class CommentPostSerializer(serializers.ModelSerializer):

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Payment Demo - {{ post.title }}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+      }
+      .premium-content {
+        background: #f8f9fa;
+        border: 2px solid #007bff;
+        padding: 20px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .payment-section {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .success {
+        color: #28a745;
+      }
+      .error {
+        color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔒 Premium Content Payment Demo</h1>
+
+    <div class="premium-content">
+      <h2>{{ post.title }}</h2>
+      <p><strong>Author:</strong> {{ post.author.username }}</p>
+      <p><strong>Content:</strong> {{ post.body }}</p>
+
+      {% if is_author %}
+      <div class="success">✅ You are the author - Free access!</div>
+      {% elif has_paid %}
+      <div class="success">✅ Payment completed - You have access!</div>
+      {% else %}
+      <div class="payment-section">
+        <h3>💳 Premium Content - $5.00</h3>
+        <p>This is premium content. Pay to unlock access.</p>
+        <button id="checkout-btn">Pay with Stripe</button>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="margin-top: 30px">
+      <h3>Demo Navigation:</h3>
+      <a href="/api/posts/">← Back to Posts</a> |
+      <a href="/api/payments/success/">Success Page</a> |
+      <a href="/api/payments/cancel/">Cancel Page</a>
+    </div>
+
+    <script>
+      const stripe = Stripe("{{ stripe_publishable_key }}");
+
+      document
+        .getElementById("checkout-btn")
+        ?.addEventListener("click", async () => {
+          try {
+            const response = await fetch(
+              "/api/payments/create-checkout-session/{{ post_id }}/",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+              }
+            );
+
+            const session = await response.json();
+
+            const result = await stripe.redirectToCheckout({
+              sessionId: session.id,
+            });
+
+            if (result.error) {
+              alert("Payment error: " + result.error.message);
+            }
+          } catch (error) {
+            alert("Error: " + error.message);
+          }
+        });
+    </script>
+  </body>
+</html>

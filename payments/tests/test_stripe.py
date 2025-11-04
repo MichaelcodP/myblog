@@ -81,15 +81,22 @@ def test_author_access_own_premium_post():
 
 @pytest.mark.django_db
 def test_already_purchased():
-    user = User.objects.create_user(username="buyer", password="pass")
+    # Create AUTHOR (different user)
+    author = User.objects.create_user(username="author", password="pass")
+
+    # Create BUYER (the one who purchased)
+    buyer = User.objects.create_user(username="buyer", password="pass")
     client = APIClient()
-    client.force_authenticate(user=user)
+    client.force_authenticate(user=buyer)  # Authenticate as BUYER
 
     post = BlogPost.objects.create(
-        title="Premium post", body="Body", author=user, premium=True
+        title="Premium post",
+        body="Body",
+        author=author,
+        premium=True,  # Author is different
     )
     Payment.objects.create(
-        user=user,
+        user=buyer,  # BUYER purchased
         post=post,
         stripe_checkout_id="cs_1",
         amount=5,

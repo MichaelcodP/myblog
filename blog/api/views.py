@@ -1,5 +1,5 @@
 import logging
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from blog.models import BlogPost, Comment
 from .filters import BlogPostFilter
 from .serializers import BlogPostSerializer, CommentPostSerializer, CommentGetSerializer
@@ -181,6 +181,19 @@ class BlogPostViewSet(LikeModelMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def unlike(self, request, pk=None):
         return super().unlike(request, pk)
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["like", "unlike"]:
+            # Only require authentication for likes/unlikes, not payment
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            # Use default permissions for other actions
+            permission_classes = self.permission_classes
+
+        return [permission() for permission in permission_classes]
 
 
 class CommentViewSet(LikeModelMixin, viewsets.ModelViewSet):
