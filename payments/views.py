@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.urls import reverse
 import stripe
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -32,9 +32,22 @@ from drf_yasg import openapi
     },
     tags=["payments"],
 )
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 def payment_success(request):
     """Handle successful payment callback."""
+
+    if request.user.is_authenticated:
+        recent_payment = (
+            Payment.objects.filter(user=request.user, status="pending")
+            .order_by("-created_at")
+            .first()
+        )
+
+        if recent_payment:
+            recent_payment.status = "completed"
+            recent_payment.paid = True
+            recent_payment.save()
+
     if request.accepted_renderer.format == "html":
         messages.success(
             request,
@@ -122,12 +135,16 @@ def create_checkout_session(request, post_id):
     if not post.premium:
         return Response({"error": "This post is not premium."}, status=400)
 
-    # If already purchased
-    if Payment.objects.filter(user=request.user, post=post, paid=True).exists():
-        return Response({"message": "Already purchased."})
-
     if post.author == request.user:
         return Response({"message": "Authors can access their posts for free."})
+
+    # Check for existing payment FIRST
+    existing_payment = Payment.objects.filter(user=request.user, post=post).first()
+    if existing_payment:
+        if existing_payment.paid or existing_payment.status == "completed":
+            return Response({"message": "Already purchased."})
+        # If pending payment exists, delete it and create new one
+        existing_payment.delete()
 
     checkout_session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -157,3 +174,31 @@ def create_checkout_session(request, post_id):
     )
 
     return Response({"id": checkout_session.id})
+
+
+def payment_demo(request, post_id):
+    """Demo page showing complete Stripe checkout flow"""
+    post = get_object_or_404(BlogPost, id=post_id)
+
+    if not post.premium:
+        return Response({"error": "This post is not premium"}, status=400)
+
+    # Check if user already paid
+    has_paid = False
+    if request.user.is_authenticated:
+        has_paid = Payment.objects.filter(
+            user=request.user, post=post, status="completed"
+        ).exists()
+
+    context = {
+        "post": post,
+        "stripe_publishable_key": getattr(
+            settings, "STRIPE_PUBLISHABLE_KEY", "pk_test_demo"
+        ),
+        "post_id": post_id,
+        "has_paid": has_paid,
+        "is_author": (
+            request.user == post.author if request.user.is_authenticated else False
+        ),
+    }
+    return render(request, "payments/demo.html", context)

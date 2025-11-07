@@ -13,40 +13,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      # Update pip, setuptools and wheel
       - name: Upgrade pip, setuptools and wheel
         run: |
           python -m pip install --upgrade pip setuptools wheel
-      # Clear pip cache
       - name: Clear pip cache
         run: pip cache purge
-        # Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install flake8
           pip install -r requirements.txt
-        # Run flake8
       - name: Run flake8
         run: |
           PYTHONPATH=$(pwd):$(pwd)/myblog flake8 .
 
   tests:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U $POSTGRES_USER"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -57,13 +39,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest-cov
+      - name: Setup Redis for testing
+        uses: supercharge/redis-github-action@1.7.0
+        with:
+          redis-version: 6
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/myblog
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_HOST: localhost
-          DB_PORT: 5432
+          SECRET_KEY: test-secret-key-for-ci-testing-only
+          DEBUG: False
+          TESTING: true 
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          # Use SQLite for testing - no external DB needed
+          DB_ENGINE: django.db.backends.sqlite3
+          DB_NAME: ":memory:"
+          # Redis for testing
+          REDIS_URL: redis://localhost:6379/0
+          # Stripe test keys (dummy values for CI)
+          STRIPE_PUBLISHABLE_KEY: pk_test_dummy
+          STRIPE_SECRET_KEY: sk_test_dummy
+          STRIPE_WEBHOOK_SECRET: whsec_dummy
         run: |
           pytest --cov=myblog

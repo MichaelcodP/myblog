@@ -1,0 +1,24 @@
+[Unit]
+Description=MyBlog Celery Worker Service
+Documentation=https://github.com/MichaelcodP/myblog
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=exec
+User=myblog
+Group=myblog
+WorkingDirectory=/home/myblog/myblog_project
+Environment=PATH=/home/myblog/myblog_project/venv/bin
+ExecStart=/home/myblog/myblog_project/venv/bin/celery \
+          --app=myblog \
+          worker \
+          --loglevel=info \
+          --logfile=/home/myblog/logs/celery.log
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -41,6 +41,7 @@ urlpatterns = [
     path("api/", include("users.urls")),  # Register, Login, Logout
     path("api/", include("blog.api.urls")),  # Blogpost API
     path("api/payments/", include("payments.urls", namespace="payments")),
+    path("api-auth/", include("rest_framework.urls")),
     path("swagger.json/", schema_view.without_ui(cache_timeout=0), name="schema-json"),
     path(
         "swagger/",
